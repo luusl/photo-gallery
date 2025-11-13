@@ -54,8 +54,7 @@ const Layout: FC = () => {
                 <Paper elevation={24} square>
                     <Typography variant="body2" style={{ padding: "10px", textAlign: 'justify' }} >
                         <Link href="https://github.com/rigon/photo-gallery#contribute">
-                            If you find this project useful, please consider supporting it.
-                            Only with your help is possible to make this project better.
+                            photo-gallery
                         </Link>
                         <span style={{ float: "right" }}>v{APP_VERSION}</span>
                     </Typography>

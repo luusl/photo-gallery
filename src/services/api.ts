@@ -67,7 +67,7 @@ export const api = createApi({
             }),
             invalidatesTags: [ 'Pseudo', 'Albums'],
         }),
-        getPhotoInfo: builder.query<any[], PhotoType>({
+        getPhotoInfo: builder.query<unknown[], PhotoType>({
             query: ({collection, album, id }) => `/collections/${collection}/albums/${album}/photos/${id}/info`,
         }),
         savePhotoToPseudo: builder.mutation<void, QuerySaveFavorite>({

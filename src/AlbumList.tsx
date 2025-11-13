@@ -13,6 +13,7 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import LinearProgress from '@mui/material/LinearProgress';
 import SearchIcon from '@mui/icons-material/Search';
+import SortIcon from '@mui/icons-material/Sort';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
@@ -28,17 +29,24 @@ const AlbumList: FC<AlbumListProps> = ({onClick}) => {
     const { collection, album } = useParams();
     const { data = [], isFetching } = useGetAlbumsQuery({collection}, {skip: collection === undefined});
     const [ searchTerm, setSearchTerm ] = useState<string>("");
+    const [ sortOrder, setSortOrder ] = useState<'asc' | 'desc'>('desc');
 
     const albums = useMemo(() => {
-        if (searchTerm.length < 1)  // Empty search, don't filter
-            return data;
+        let filtered = data;
 
-        const terms = searchTerm.toLowerCase().split(/\s+/);
-        return data.filter(album => {
-            const low = album.name.toLowerCase();
-            return terms.reduce((acc, term) => acc && low.includes(term), true);
+        if (searchTerm.length >= 1) {
+            const terms = searchTerm.toLowerCase().split(/\s+/);
+            filtered = data.filter(album => {
+                const low = album.name.toLowerCase();
+                return terms.reduce((acc, term) => acc && low.includes(term), true);
+            });
+        }
+
+        return [...filtered].sort((a, b) => {
+            const comparison = a.name.localeCompare(b.name);
+            return sortOrder === 'asc' ? comparison : -comparison;
         });
-    }, [searchTerm, data]);
+    }, [searchTerm, sortOrder, data]);
     const isEmptyList = albums.length < 1;
 
     const onSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,6 +109,9 @@ const AlbumList: FC<AlbumListProps> = ({onClick}) => {
                         </IconButton>
                     </InputAdornment>),
                 }} />
+        <IconButton onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}>
+            <SortIcon />
+        </IconButton>
         <List component="nav" sx={{height: "100%", p: 0}}>
             {list}
         </List>
