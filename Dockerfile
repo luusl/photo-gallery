@@ -13,7 +13,7 @@ RUN CGO_ENABLED=1 go build -v -o photo-gallery
 # For static compilation (not working): -ldflags '-extldflags "-static"'
 
 # Fronted
-FROM node:25-alpine3.22 AS frontend
+FROM node:22-alpine AS frontend
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
