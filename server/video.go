@@ -32,6 +32,10 @@ func GetVideoFrame(srcFileName string) (image.Image, error) {
 		return nil, err
 	}
 	inputCodecCtx := srcVideoStream.CodecCtx()
+	if inputCodecCtx == nil {
+		log.Printf("No video codec found in '%s'\n", srcFileName)
+		return nil, errors.New("No video codec found")
+	}
 
 	// Output
 	outputRawCodec, err := gmf.FindEncoder(gmf.AV_CODEC_ID_RAWVIDEO)
