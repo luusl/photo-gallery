@@ -2,8 +2,11 @@
 ## FROM --platform=$BUILDPLATFORM
 ## See more for cross-compile:
 ## https://dh1tw.de/2019/12/cross-compiling-golang-cgo-projects/
-FROM golang:1.25-alpine AS server
-RUN apk update && apk add musl-dev gcc g++ ffmpeg-libs ffmpeg-dev
+FROM golang:1.26-bookworm AS server
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    gcc g++ libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavfilter-dev libavdevice-dev ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY server/go.mod server/go.sum ./
 RUN go mod download -x
@@ -13,7 +16,7 @@ RUN CGO_ENABLED=1 go build -v -o photo-gallery
 # For static compilation (not working): -ldflags '-extldflags "-static"'
 
 # Fronted
-FROM node:22-alpine AS frontend
+FROM node:24-alpine AS frontend
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
@@ -21,7 +24,7 @@ COPY . .
 RUN npm run build
 
 # Deploy
-FROM alpine:3.22
+FROM alpine:3.24
 WORKDIR /app/server
 EXPOSE 3080
 VOLUME "/photos" "/thumbs"
