@@ -32,8 +32,12 @@ function MainLayout() {
 }
 
 function Router() {
+    // Use the base URL (set by Vite build or dev server) as the Router basename.
+    // import.meta.env.BASE_URL will be '/' when serving at root or '/gallery/' when building with --base /gallery/
+    const basename = (import.meta.env.BASE_URL as string) || '/';
+
     return (
-        <BrowserRouter>
+        <BrowserRouter basename={basename}>
             <Routes>
                 <Route path="/" element={<MainLayout />}>
                     <Route index element={<Home />} />

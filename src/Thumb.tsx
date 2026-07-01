@@ -50,6 +50,9 @@ export default (photos: PhotoImageType[], showIcons: boolean) => ({ photo, layou
     const selectedFavorite = favorite.get();
     const { isFavorite, isFavoriteThis, isFavoriteAnother } = favorite.photo(photo);
 
+    // Helper: ensure the base (import.meta.env.BASE_URL) is used for absolute hrefs
+    const BASE_URL = ((import.meta.env.BASE_URL as string) || "/").replace(/\/$/, '');
+
     const mouseEnter = () => {
         setMouseOver(true);
     }
@@ -75,7 +78,7 @@ export default (photos: PhotoImageType[], showIcons: boolean) => ({ photo, layou
         <div onClick={e => e.stopPropagation()}>
             <b>This photo is from album:</b><br />
                 &bull;
-                <Link href={`/${photo.collection}/${photo.album}/${photo.id}`} target="_blank" color="inherit" underline="hover">
+                <Link href={`${BASE_URL}/${photo.collection}/${photo.album}/${photo.id}`} target="_blank" color="inherit" underline="hover">
                     {photo.album} {collection !== photo.collection && <Badge>{photo.collection}</Badge>}
                 </Link>
                 <br />
@@ -83,7 +86,7 @@ export default (photos: PhotoImageType[], showIcons: boolean) => ({ photo, layou
                 {photo.favorite?.map(favorite => (
                     <React.Fragment key={`${photo.collection}:${photo.album}`}>
                         &bull;
-                        <Link href={`/${favorite.collection}/${favorite.album}`} target="_blank" color="inherit" underline="hover">
+                        <Link href={`${BASE_URL}/${favorite.collection}/${favorite.album}`} target="_blank" color="inherit" underline="hover">
                             {favorite.album} {collection !== favorite.collection && <Badge>{favorite.collection}</Badge>}
                         </Link>
                         <br />
