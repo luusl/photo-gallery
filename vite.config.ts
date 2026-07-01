@@ -39,22 +39,27 @@ const pwaConfig: Partial<VitePWAOptions> = {
 }
 
 function renderChunks(deps: string[]) {
-    const ret = {};
+    const ret = {} as any;
     
     // Get dependencies as set in chunks
     for (const [key, regs] of Object.entries(chunks))
-        ret[key] = regs.flatMap(reg => deps.filter(dep => new RegExp("^"+reg+"$").test(dep)));
+        ret[key] = (regs as string[]).flatMap(reg => deps.filter(dep => new RegExp("^"+reg+"$").test(dep)));
     
     // Remaining depedencies that were not included in the previous step
-    const regs = Object.values(chunks).flatMap(regs => regs.map(reg => new RegExp("^"+reg+"$")));
+    const regs = Object.values(chunks).flatMap(regs => (regs as string[]).map(reg => new RegExp("^"+reg+"$")));
     const remaining = deps.filter(dep => !regs.find(reg => reg.test(dep)));
     remaining.forEach(dep => ret[dep] = [dep]);
 
     return ret;
 }
 
+// Base path for the app. You can set at build time using --base or with env BASE_PATH/VITE_BASE_PATH.
+// Example: npm run build -- --base /gallery/
+const basePath = process.env.BASE_PATH || process.env.VITE_BASE_PATH || '/';
+
 // https://vitejs.dev/config/
 export default defineConfig({
+    base: basePath,
     plugins: [react(), eslint(), VitePWA(pwaConfig)],
     build: {
         outDir: "build",
@@ -71,6 +76,7 @@ export default defineConfig({
         },
     },
     define: {
-        APP_VERSION: JSON.stringify(pkg.version)
+        APP_VERSION: JSON.stringify(pkg.version),
+        BASE_PATH: JSON.stringify(basePath)
     }
 });

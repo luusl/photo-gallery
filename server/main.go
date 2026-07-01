@@ -269,11 +269,17 @@ func main() {
 	// Middleware
 	e.Use(middleware.Secure())
 	//e.Use(middleware.Recover())
+
+	// Build prefixes respecting base path (e.g. "/" or "/gallery")
+	apiPrefix := path.Join(config.basePath, "api")
+	webdavPrefix := path.Join(config.basePath, "webdav")
+	statusPrefix := path.Join(config.basePath, "status")
+
 	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{
 		Skipper: func(c echo.Context) bool {
 			skip := []string{
-				"/api/collections/*/albums/*/photos/*/thumb",   // Skip compressing thumbnails
-				"/api/collections/*/albums/*/photos/*/files/*", // Skip compressing files
+				path.Join(apiPrefix, "collections", "*", "albums", "*", "photos", "*", "thumb"),
+				path.Join(apiPrefix, "collections", "*", "albums", "*", "photos", "*", "files", "*"),
 			}
 			for _, pattern := range skip {
 				if matched, _ := path.Match(pattern, c.Path()); matched {
@@ -291,7 +297,7 @@ func main() {
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			// Suspend background work only when requests to the API are received
-			if matched, _ := path.Match("/api/*", c.Path()); matched {
+			if matched, _ := path.Match(path.Join(apiPrefix, "*"), c.Path()); matched {
 				defer ResumeBackgroundWork()
 				SuspendBackgroundWork()
 			}
@@ -318,11 +324,11 @@ func main() {
 
 	// Enable View Status interface
 	if config.debug {
-		ViewStatusInit(e.Group("/status"))
+		ViewStatusInit(e.Group(statusPrefix))
 	}
 
-	// API
-	api := e.Group("/api")
+	// API - mounted under basePath (e.g. "/api" or "/gallery/api")
+	api := e.Group(apiPrefix)
 	api.GET("/pseudos", pseudos)
 	api.GET("/collections", collections)
 	api.GET("/collections/:collection/albums", albums)
@@ -341,31 +347,32 @@ func main() {
 		return c.String(http.StatusNotFound, "not found")
 	})
 
-	// WebDAV
+	// WebDAV (mount under basePath/webdav)
 	if !config.webdavDisabled {
-		e.Use(WebDAVWithConfig("/webdav", config.collections))
-		log.Println("WebDAV will be available at http://" + serverAddr + "/webdav")
+		e.Use(WebDAVWithConfig(webdavPrefix, config.collections))
+		log.Println("WebDAV will be available at http://" + serverAddr + webdavPrefix)
 	}
 
 	// Frontend
-	// serve Single Page application on "/"
+	// serve Single Page application on basePath ("/" or "/gallery")
 	// assume static file at ../build folder
 	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
-		Root:  "../build",   // This is the path to your SPA build folder, the folder that is created from running "npm build"
-		Index: "index.html", // This is the default html page for your SPA
+		Root:  "../build",   // This is the path to your SPA build folder
+		Index: "index.html",
 		HTML5: true,
 		Skipper: func(c echo.Context) bool {
-			isNotStatic := strings.HasPrefix(c.Path(), "/api") ||
-				strings.HasPrefix(c.Path(), "/webdav")
-			if !isNotStatic { // Cache-Control header
+			// Skip static middleware if the path is API or WebDAV, or the request is not under the basePath
+			isNotStatic := strings.HasPrefix(c.Path(), apiPrefix) || strings.HasPrefix(c.Path(), webdavPrefix)
+			// Set Cache-Control header for static assets under basePath
+			if !isNotStatic && strings.HasPrefix(c.Path(), config.basePath) {
 				c.Response().Header().Set(echo.HeaderCacheControl, HeaderCacheControl)
 			}
-			return isNotStatic
+			return isNotStatic || !strings.HasPrefix(c.Path(), config.basePath)
 		},
 	}))
 
 	// Start server
-	log.Println("Starting server: http://" + serverAddr)
+	log.Println("Starting server: http://" + serverAddr + " (base path: " + config.basePath + ")")
 	go func() {
 		if err := e.Start(serverAddr); err != nil && err != http.ErrServerClosed {
 			e.Logger.Fatal("shutting down the server")

@@ -1,5 +1,5 @@
 Photo Gallery
-=============
+==============
 
 ![](https://img.shields.io/github/check-runs/rigon/photo-gallery/master.svg "Build Status")
 ![](https://img.shields.io/github/tag/rigon/photo-gallery.svg "Latest version")
@@ -24,6 +24,8 @@ That's it, enjoy! Just open in your browser [http://localhost:3080](http://local
 
 This image however includes a demo gallery, for your own use please use `rigon/photo-gallery`.
 
+
+
 ## Motivation
 
 There are a lot of photo gallery projects out there. However they often have their own unique way of storing data so you don't really have control how it is organized, not just the photos themselves, but also like albums, favorites and other preferences alongside. All of this must be kept transparent and accessible.
@@ -37,6 +39,7 @@ Finally, an app that is lightweight and could run on small devices like a Raspbe
 To sum up, the reason for this project is to be open sourced, you owning your own data and supporting a wide range of data formats all with an easy navigation and a lightweight design.
 
 
+
 ## Goals
 
 **Built around the file system:** photos are loaded from albums. Data is preserved as-is in the filesystem. Changes you make later are saved as transparently as possible, like as choosing your favorites. No requirement to be tied to a database. If you decide for another solution you should own all your data.
@@ -46,6 +49,7 @@ To sum up, the reason for this project is to be open sourced, you owning your ow
 **Made for photography:** for everyone, amateur or professional, that enjoys taking photos and revisiting precious memories captured through them.
 
 **Ease of use:** navigation through albums as easy as possible
+
 
 
 ## Features
@@ -191,6 +195,31 @@ See [How to configure Port forwarding in Terminus](https://support.termius.com/h
 For iOS is more difficult setting it up, you can find more info
 [here](https://support.termius.com/hc/en-us/articles/900006226306-I-can-t-use-the-iOS-app-in-the-background) and
 [here](https://support.termius.com/hc/en-us/articles/4402044543897#location).
+
+### Serving under a subpath
+
+This project can be served under a configurable base path (subpath) such as `/gallery`.
+
+- Frontend: the Vite build can be configured with `--base` (or env vars) so assets and routes resolve correctly under a subpath. Example build command:
+
+    npm run build -- --base /gallery/
+
+  This will set `import.meta.env.BASE_URL` (and `%BASE_URL%` in HTML) to `/gallery/`.
+
+- Backend: the server now accepts a `--base-path` CLI flag to mount API, WebDAV and the web UI under the chosen base path. Example:
+
+    cd server && ./photo-gallery --port 3080 --base-path /gallery -c "name=Photos,path=/photos,thumbs=/thumbs"
+
+  The API will then be available at `http://localhost:3080/gallery/api/...`.
+
+- Docker: the image entrypoint supports passing `--base-path`. Example:
+
+    docker run -p 3080:3080 --name photo-gallery -v /media/photos:/photos -v /data/thumbs:/thumbs rigon/photo-gallery --base-path /gallery -c "name=Photos,path=/photos,thumbs=/thumbs"
+
+Notes and caveats:
+
+- When building the frontend for a subpath use Vite's `--base` flag so `import.meta.env.BASE_URL` is set at build time. PWA/service-worker paths should be verified after deploying under a subpath.
+- If you front the application with a reverse proxy (nginx, Caddy), prefer routing `{base}/api/*` to the backend and `{base}/*` to the static files. Alternatively you can rewrite paths in the proxy, but configuring the app is more robust.
 
 ## Development
 
